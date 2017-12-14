@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="author" content="Lasse Korsgaard">
+	<title>KIKK</title>
+	<link rel="stylesheet" href="css/style.css">
+	<script src="bundle.js"></script>
+</head>
+<body>
+
+	<audio src="assets/clap.mp3" id="clap-sound" preload="auto"></audio>
+	<audio src="assets/oh.mp3" id="oh-sound" preload="auto"></audio>
+
+	<div id="wrapper">
+		<canvas id="canvas"></canvas>
+	</div>
+
+	<div id="settings">
+		<a class="close-button">×</a>
+		<h1>Settings</h1>
+		
+		<canvas id="vizualizer"></canvas>
+
+		<section>
+			<div id="data-title"></div>
+			<a class="button" id="save">Save data set</a>	
+			<a class="button" id="load">Load data set</a>
+			<a class="button" id="clear">Clear all</a>
+			<a class="button" id="change-k">Change K: 10</a>
+			<a class="button" id="change-threshold">Change Thresold: 20</a>
+			<a class="button" id="disable">Disable</a>
+			<a class="button" id="enable">Enable</a>
+		</section>
+
+		<section>
+			<h2>Prediction: <span id="prediction"></span></h2>
+		</section>
+
+		<section>
+			<h2>Classes</h2>
+			<ul class="sound-classes">
+				<li id="jump">
+					<div class="label">Jump</div>
+					<div class="counter"><span>0</span> samples</div>
+					<a class="button train">Train</a>
+					<a class="clear">Clear samples</a>
+				</li>
+				<li id="duck">
+					<div class="label">Duck</div>
+					<div class="counter"><span>0</span> samples</div>
+					<a class="button train">Train</a>
+					<a class="clear">Clear samples</a>
+				</li>
+				<li id="neutral">
+					<div class="label">Neutral</div>
+					<div class="counter"><span>0</span> samples</div>
+					<a class="button train">Train</a>
+					<a class="clear">Clear samples</a>
+				</li>
+			</ul>
+		</section>
+	</div>
+
+</body>
+</html>
