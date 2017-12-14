@@ -16,6 +16,9 @@ __[Støj](http://stoj.io)__ is a creative coding studio run by ([Andreas Refsgaa
 __Game graphics__: [Amalie Kvistgaard](http://amaliekvistgaard.dk)
 
 
+## Demo
+You can play the game here: [demo](https://stoj-kikk.surge.sh/) (Make sure to allow microphone)
+
 
 ## Installation
 To install, clone this repository and then run `yarn` in Terminal. This will install all the dependencies. Once these are installed, run `yarn watch` - this will start a local server on your machine and open up the page in your browser and you're ready to play!
