@@ -36,7 +36,7 @@ To open the training interface simply hit `Shift + TAB` on your keyboard.
 ![Training interface](assets/readme/interface.png)
 
 ### Settings
-In the training interface you can load, save and reset training data. You can also control the threshold for how sensitive the microphone should be. If you're recording a new sound and it is not being recorded, it could be because the `threshold` is too high. Click `Change Threshold` and set it to a lower number and try again. If the sound is loud enough the sound bars on the right will turn blue.
+In the training interface you can load, save and reset training data. You can also control the threshold for how sensitive the microphone should be. if you are attempting to record some new training examples, but find that nothing happens, it could be because the `threshold` is too high. Click `Change Threshold` and set it to a lower number and try again. If the sound is loud enough the sound bars on the right will turn blue.
 
 
 ### Training

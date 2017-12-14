@@ -1,1 +1,107 @@
-html,body{margin:0;width:100%;height:100%;display:flex;justify-content:center;align-items:center;background:#000}#wrapper{position:relative;width:720px;height:570px;flex:none;transform:scaleX(1.65) scaleY(1.25)}#settings{display:none;position:absolute;top:0;left:0;box-sizing:border-box;width:100vw;min-height:100vh;padding:20px;z-index:100;background:#00f;color:#fff;font-family:'Roboto Mono',monospace;font-size:14px;line-height:1.5;}#settings .close-button{position:absolute;top:10px;right:10px;padding:20px;font-size:40px;line-height:20px;cursor:pointer}#settings #vizualizer{position:absolute;width:50%;height:300px;background:#fff;border:10px solid #fff;right:30px;top:200px}#settings h1,#settings h2,#settings h3{margin:0 0 0 0;font-weight:normal}#settings h1{font-weight:bold}#settings section{margin:20px 0 0 0}#settings #data-title{margin:0 0 10px 0;height:20px}#settings .button{display:inline-block;margin:0 10px 10px 0;padding:5px 10px;border:1px solid #fff;cursor:pointer;user-select:none;}#settings .button:active{background:#fff;color:#00f}#settings ul.sound-classes{margin:20px 0 0 20px;padding:0;list-style:none;}#settings ul.sound-classes li{margin:0 0 40px 0;opacity:.6;user-select:none;}#settings ul.sound-classes li:hover{opacity:1}#settings ul.sound-classes li .label{font-size:18px;letter-spacing:1px;font-weight:bold}#settings ul.sound-classes li .counter{margin:0 0 5px 0}#settings ul.sound-classes li .clear{cursor:pointer;}#settings ul.sound-classes li .clear:hover{text-decoration:underline}
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #000;
+}
+#wrapper {
+  position: relative;
+  width: 720px;
+  height: 570px;
+  flex: none;
+  transform: scaleX(1.65) scaleY(1.25);
+}
+#settings {
+  display: none;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  box-sizing: border-box;
+  width: 100vw;
+  min-height: 100vh;
+  padding: 20px;
+  z-index: 100;
+  background: #00f;
+  color: #fff;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+}
+#settings .close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 20px;
+  font-size: 40px;
+  line-height: 20px;
+  cursor: pointer;
+}
+#settings #vizualizer {
+  position: absolute;
+  width: 50%;
+  height: 300px;
+  background: #fff;
+  border: 10px solid #fff;
+  right: 30px;
+  top: 200px;
+}
+#settings h1,
+#settings h2,
+#settings h3 {
+  margin: 0 0 0 0;
+  font-weight: normal;
+}
+#settings h1 {
+  font-weight: bold;
+}
+#settings section {
+  margin: 20px 0 0 0;
+}
+#settings #data-title {
+  margin: 0 0 10px 0;
+  height: 20px;
+}
+#settings .button {
+  display: inline-block;
+  margin: 0 10px 10px 0;
+  padding: 5px 10px;
+  border: 1px solid #fff;
+  cursor: pointer;
+  user-select: none;
+}
+#settings .button:active {
+  background: #fff;
+  color: #00f;
+}
+#settings ul.sound-classes {
+  margin: 20px 0 0 20px;
+  padding: 0;
+  list-style: none;
+}
+#settings ul.sound-classes li {
+  margin: 0 0 40px 0;
+  opacity: 0.6;
+  user-select: none;
+}
+#settings ul.sound-classes li:hover {
+  opacity: 1;
+}
+#settings ul.sound-classes li .label {
+  font-size: 18px;
+  letter-spacing: 1px;
+  font-weight: bold;
+}
+#settings ul.sound-classes li .counter {
+  margin: 0 0 5px 0;
+}
+#settings ul.sound-classes li .clear {
+  cursor: pointer;
+}
+#settings ul.sound-classes li .clear:hover {
+  text-decoration: underline;
+}
+/*# sourceMappingURL=style.css.map */
