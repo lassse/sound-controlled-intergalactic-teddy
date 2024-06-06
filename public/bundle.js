@@ -1,21 +1,21 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-'use strict';
+"use strict";
 
 Object.defineProperty(exports, "__esModule", {
-    value: true
+  value: true
 });
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _meyda = require('meyda');
+var _meyda = require("meyda");
 
 var _meyda2 = _interopRequireDefault(_meyda);
 
-var _KNN = require('./KNN');
+var _KNN = require("./KNN");
 
 var _KNN2 = _interopRequireDefault(_KNN);
 
-var _main = require('./../main');
+var _main = require("./../main");
 
 var _main2 = _interopRequireDefault(_main);
 
@@ -24,487 +24,490 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var AudioClassifier = function () {
-    function AudioClassifier(config) {
-        _classCallCheck(this, AudioClassifier);
+  function AudioClassifier(config) {
+    _classCallCheck(this, AudioClassifier);
 
-        var defaultConfig = {
-            k: 5,
-            bufferSize: 512,
-            trainPause: 400,
-            threshold: 35
-        };
+    var defaultConfig = {
+      k: 5,
+      bufferSize: 512,
+      trainPause: 400,
+      threshold: 35
+    };
 
-        this.config = Object.assign(defaultConfig, config);
-        this.allowBroadcasting = true;
-        this.trainingData = [];
-        this.training = false;
-        this.allowTraining = false;
-        this.predicting = false;
-        this.currentClass = null;
+    this.config = Object.assign(defaultConfig, config);
+    this.allowBroadcasting = true;
+    this.trainingData = [];
+    this.training = false;
+    this.allowTraining = false;
+    this.predicting = false;
+    this.currentClass = null;
 
-        this.knn = new _KNN2.default(this.config.k);
-        this.setupGUI();
+    this.knn = new _KNN2.default(this.config.k);
+    this.setupGUI();
 
-        if (Reflect.has(window, 'webkitAudioContext') && !Reflect.has(window, 'AudioContext')) {
-            window.AudioContext = window.webkitAudioContext;
-        }
-
-        if (Reflect.has(navigator, 'webkitGetUserMedia') && !Reflect.has(navigator, 'getUserMedia')) {
-            navigator.getUserMedia = navigator.webkitGetUserMedia;
-            if (!Reflect.has(AudioContext, 'createScriptProcessor')) {
-                AudioContext.prototype.createScriptProcessor = AudioContext.prototype.createJavaScriptNode;
-            }
-        }
-
-        this.context = new AudioContext();
-
-        this.synthesizer = {};
-        this.synthesizer.out = this.context.createGain();
-
-        var that = this;
-        this.meyda = _meyda2.default.createMeydaAnalyzer({
-            audioContext: this.context,
-            source: this.synthesizer.out,
-            bufferSize: this.config.bufferSize,
-            featureExtractors: ['mfcc', 'loudness'],
-            callback: this.audioCallback.bind(that)
-        });
-        this.initializeMicrophoneSampling();
-
-        this.renderer = null;
-        this.peaked = false;
-        window.addEventListener('resize', this.resize.bind(this));
+    if (Reflect.has(window, "webkitAudioContext") && !Reflect.has(window, "AudioContext")) {
+      window.AudioContext = window.webkitAudioContext;
     }
 
-    _createClass(AudioClassifier, [{
-        key: 'hideGUI',
-        value: function hideGUI() {
-            this.hidden = true;
-            this.element.style.display = 'none';
-            cancelAnimationFrame(this.renderer);
+    if (Reflect.has(navigator, "webkitGetUserMedia") && !Reflect.has(navigator, "getUserMedia")) {
+      navigator.getUserMedia = navigator.webkitGetUserMedia;
+
+      if (!Reflect.has(AudioContext, "createScriptProcessor")) {
+        AudioContext.prototype.createScriptProcessor = AudioContext.prototype.createJavaScriptNode;
+      }
+    }
+
+    this.context = new AudioContext();
+
+    this.synthesizer = {};
+    this.synthesizer.out = this.context.createGain();
+
+    var that = this;
+    this.meyda = _meyda2.default.createMeydaAnalyzer({
+      audioContext: this.context,
+      source: this.synthesizer.out,
+      bufferSize: this.config.bufferSize,
+      featureExtractors: ["mfcc", "loudness"],
+      callback: this.audioCallback.bind(that)
+    });
+    this.initializeMicrophoneSampling();
+
+    this.renderer = null;
+    this.peaked = false;
+    window.addEventListener("resize", this.resize.bind(this));
+  }
+
+  _createClass(AudioClassifier, [{
+    key: "hideGUI",
+    value: function hideGUI() {
+      this.hidden = true;
+      this.element.style.display = "none";
+      cancelAnimationFrame(this.renderer);
+    }
+  }, {
+    key: "showGUI",
+    value: function showGUI() {
+      this.hidden = false;
+      this.element.style.display = "block";
+      this.renderer = requestAnimationFrame(this.render.bind(this));
+      this.resize();
+    }
+  }, {
+    key: "keyDown",
+    value: function keyDown(event) {
+      if (event.keyCode === 9 && event.shiftKey) {
+        event.preventDefault();
+
+        if (this.hidden) {
+          this.showGUI();
+          _main2.default.GAME.pause();
+        } else {
+          this.hideGUI();
+          // Q.GAME.unpause()
+          _main2.default.GAME.reset(false);
         }
-    }, {
-        key: 'showGUI',
-        value: function showGUI() {
-            this.hidden = false;
-            this.element.style.display = 'block';
-            this.renderer = requestAnimationFrame(this.render.bind(this));
-            this.resize();
+      }
+    }
+  }, {
+    key: "resize",
+    value: function resize() {
+      this.canvasWidth = this.canvas.width = this.canvas.offsetWidth;
+      this.canvasHeight = this.canvas.height = this.canvas.offsetHeight;
+    }
+  }, {
+    key: "render",
+    value: function render() {
+      var _this = this;
+
+      this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
+      this.ctx.fillStyle = this.peaked ? "blue" : "lightblue";
+
+      if (this.visual && this.visual.length > 0) {
+        var bandWidth = this.canvasWidth / this.visual.length;
+        this.visual.forEach(function (value, index) {
+          var height = value * (_this.canvasHeight * 0.3);
+          _this.ctx.fillRect(index * bandWidth, _this.canvasHeight - height, bandWidth + 1, height);
+        });
+      }
+      this.renderer = requestAnimationFrame(this.render.bind(this));
+    }
+  }, {
+    key: "changeK",
+    value: function changeK() {
+      var string = prompt("Set K (current value: " + this.knn.topK + ")");
+      if (string) {
+        var value = parseInt(string);
+        if (value > 0 && value < 40) {
+          this.knn.topK = value;
+          document.querySelector("#change-k").textContent = "Change K: " + this.knn.topK;
         }
-    }, {
-        key: 'keyDown',
-        value: function keyDown(event) {
-            if (event.keyCode === 9 && event.shiftKey) {
-                event.preventDefault();
-
-                if (this.hidden) {
-                    this.showGUI();
-                    _main2.default.GAME.pause();
-                } else {
-                    this.hideGUI();
-                    // Q.GAME.unpause()
-                    _main2.default.GAME.reset(false);
-                }
-            }
+      }
+    }
+  }, {
+    key: "changeThreshold",
+    value: function changeThreshold() {
+      var string = prompt("Set Threshold (current value: " + this.config.threshold + ")");
+      if (string) {
+        var value = parseInt(string);
+        if (value > 0 && value < 200) {
+          this.config.threshold = value;
+          document.querySelector("#change-threshold").textContent = "Change Threshold: " + this.config.threshold;
         }
-    }, {
-        key: 'resize',
-        value: function resize() {
-            this.canvasWidth = this.canvas.width = this.canvas.offsetWidth;
-            this.canvasHeight = this.canvas.height = this.canvas.offsetHeight;
+      }
+    }
+  }, {
+    key: "trainingButtonDown",
+    value: function trainingButtonDown(event) {
+      var id = event.currentTarget.parentNode.id;
+      window.addEventListener("mouseup", this.trainingButtonUpEvent);
+      this.stopPredicting();
+      this.startTraining(id);
+    }
+  }, {
+    key: "trainingButtonUp",
+    value: function trainingButtonUp() {
+      window.removeEventListener("mouseup", this.trainingButtonUpEvent);
+      this.stopTraining();
+      this.startPredicting();
+    }
+  }, {
+    key: "confirmClear",
+    value: function confirmClear(event) {
+      var id = event.currentTarget.parentNode.id;
+      var test = confirm('Are you sure you want to clear "' + id + '"');
+      if (test) {
+        this.clearClass(id);
+      }
+    }
+  }, {
+    key: "confirmClearAll",
+    value: function confirmClearAll(event) {
+      var test = confirm("Are you sure you want to clear all classes");
+      if (test) {
+        this.clearAll();
+      }
+    }
+  }, {
+    key: "setDataSet",
+    value: function setDataSet(json) {
+      this.clearAll();
+      this.trainingData = {};
+      var data = {};
+
+      for (var key in json) {
+        data[key] = JSON.parse(json[key]);
+        this.trainingData[key] = [];
+
+        var length = data[key].length;
+        for (var index = 0; index < length; index += 1) {
+          this.knn.learn(data[key][index], key);
+          this.trainingData[key].push(data[key][index]);
         }
-    }, {
-        key: 'render',
-        value: function render() {
-            var _this = this;
+      }
+      this.updateSamples();
+      this.stopTraining();
+      this.startPredicting();
+    }
+  }, {
+    key: "saveDataSet",
+    value: function saveDataSet() {
+      var object = {};
+      for (var key in this.trainingData) {
+        object[key] = JSON.stringify(this.trainingData[key]);
+      }
+      var string = JSON.stringify(object);
+      var blob = new Blob([string], { type: "application/json" });
+      var url = URL.createObjectURL(blob);
 
-            this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
-            this.ctx.fillStyle = this.peaked ? 'blue' : 'lightblue';
+      var link = document.createElement("a");
+      link.href = url;
+      link.download = "dataset.json";
+      link.click();
+    }
+  }, {
+    key: "setFileName",
+    value: function setFileName(name) {
+      document.querySelector("#data-title").textContent = name;
+    }
+  }, {
+    key: "loadDefaultDataSet",
+    value: function loadDefaultDataSet() {
+      var _this2 = this;
 
-            var bandWidth = this.canvasWidth / this.visual.length;
-            this.visual.forEach(function (value, index) {
-                var height = value * (_this.canvasHeight * 0.3);
-                _this.ctx.fillRect(index * bandWidth, _this.canvasHeight - height, bandWidth + 1, height);
-            });
-            this.renderer = requestAnimationFrame(this.render.bind(this));
+      var request = new XMLHttpRequest();
+      var filename = "datasets/default.json?t=" + new Date().getTime();
+      request.onreadystatechange = function () {
+        if (request.readyState === 4 && request.status === 200) {
+          var data = JSON.parse(request.responseText);
+          _this2.setDataSet(data);
+          _this2.setFileName("default.json");
         }
-    }, {
-        key: 'changeK',
-        value: function changeK() {
-            var string = prompt('Set K (current value: ' + this.knn.topK + ')');
-            if (string) {
-                var value = parseInt(string);
-                if (value > 0 && value < 40) {
-                    this.knn.topK = value;
-                    document.querySelector('#change-k').textContent = 'Change K: ' + this.knn.topK;
-                }
-            }
+      };
+      request.open("get", filename, true);
+      request.send();
+    }
+  }, {
+    key: "loadDataSet",
+    value: function loadDataSet() {
+      var _this3 = this;
+
+      var input = document.createElement("input");
+      input.type = "file";
+      input.addEventListener("change", function (event) {
+        if (input.files.length > 0) {
+          var file = input.files[0];
+          var name = file.name;
+          var fileReader = new FileReader();
+          fileReader.onload = function (event) {
+            var lines = event.target.result;
+            var data = JSON.parse(lines);
+            _this3.setDataSet(data);
+            _this3.setFileName(name);
+          };
+          fileReader.readAsText(file);
         }
-    }, {
-        key: 'changeThreshold',
-        value: function changeThreshold() {
-            var string = prompt('Set Threshold (current value: ' + this.config.threshold + ')');
-            if (string) {
-                var value = parseInt(string);
-                if (value > 0 && value < 200) {
-                    this.config.threshold = value;
-                    document.querySelector('#change-threshold').textContent = 'Change Threshold: ' + this.config.threshold;
-                }
-            }
+      });
+      input.click();
+    }
+
+    // toggle() {
+    // this.allowPredicting = !this.allowPredicting
+    // this.predicting = this.allowPredicting
+    // if (this.allowPredicting) {
+    //     document.querySelector('#toggle').textContent = 'Disable prediction'
+    // }else {
+    //     document.querySelector('#toggle').textContent = 'Enable prediction'
+    // }
+    // }
+
+  }, {
+    key: "enable",
+    value: function enable() {
+      this.allowBroadcasting = true;
+      document.querySelector("#disable").style.opacity = 1;
+      document.querySelector("#enable").style.opacity = 0.5;
+      document.querySelector("#enable").textContent = "Enabled";
+      document.querySelector("#disable").textContent = "Disable";
+    }
+  }, {
+    key: "disable",
+    value: function disable() {
+      this.allowBroadcasting = false;
+      document.querySelector("#disable").style.opacity = 0.5;
+      document.querySelector("#disable").textContent = "Disabled";
+      document.querySelector("#enable").textContent = "Enable";
+      document.querySelector("#enable").style.opacity = 1;
+    }
+  }, {
+    key: "setupGUI",
+    value: function setupGUI() {
+      var _this4 = this;
+
+      this.element = document.querySelector("#settings");
+      this.canvas = document.querySelector("#vizualizer");
+      this.ctx = this.canvas.getContext("2d");
+      this.hideGUI();
+
+      var closeButton = document.querySelector(".close-button");
+      closeButton.addEventListener("click", this.hideGUI.bind(this));
+
+      document.querySelector("#disable").addEventListener("click", this.disable.bind(this));
+      document.querySelector("#enable").addEventListener("click", this.enable.bind(this));
+      this.enable();
+      // document.querySelector('#toggle').addEventListener('click', this.toggle.bind(this));
+      document.querySelector("#save").addEventListener("click", this.saveDataSet.bind(this));
+      document.querySelector("#load").addEventListener("click", this.loadDataSet.bind(this));
+      document.querySelector("#change-k").textContent = "Change K: " + this.knn.topK;
+      document.querySelector("#change-k").addEventListener("click", this.changeK.bind(this));
+
+      document.querySelector("#change-threshold").textContent = "Change Threshold: " + this.config.threshold;
+      document.querySelector("#change-threshold").addEventListener("click", this.changeThreshold.bind(this));
+      document.querySelector("#clear").addEventListener("click", this.confirmClearAll.bind(this));
+      this.trainingButtonUpEvent = this.trainingButtonUp.bind(this);
+      this.trainingButtons = document.querySelectorAll(".sound-classes a.train");
+      this.trainingButtons.forEach(function (button) {
+        button.addEventListener("mousedown", _this4.trainingButtonDown.bind(_this4));
+      });
+
+      this.clearButtons = document.querySelectorAll(".sound-classes a.clear");
+      this.clearButtons.forEach(function (button) {
+        button.addEventListener("click", _this4.confirmClear.bind(_this4));
+      });
+
+      this.loadDefaultDataSet();
+
+      window.addEventListener("keydown", this.keyDown.bind(this));
+    }
+  }, {
+    key: "save",
+    value: function save() {
+      var object = {};
+      for (var key in this.trainingData) {
+        object[key] = JSON.stringify(this.trainingData[key]);
+      }
+      var string = JSON.stringify(object);
+    }
+  }, {
+    key: "clearClass",
+    value: function clearClass(name) {
+      this.knn.deleteClassData(name);
+      this.trainingData[name] = [];
+      this.updateSamples();
+    }
+  }, {
+    key: "clearAll",
+    value: function clearAll() {
+      this.setFileName("");
+      for (var key in this.trainingData) {
+        this.clearClass(key);
+      }
+      this.trainingData = {};
+    }
+  }, {
+    key: "initializeMicrophoneSampling",
+    value: function initializeMicrophoneSampling() {
+      var that = this;
+
+      function errorCallback(err) {
+        throw err;
+      }
+
+      function successCallback(mediaStream) {
+        window.mediaStream = mediaStream;
+        that.source = that.context.createMediaStreamSource(window.mediaStream);
+        that.meyda.setSource(that.source);
+        that.meyda.start();
+      }
+
+      try {
+        navigator.getUserMedia = navigator.webkitGetUserMedia || navigator.getUserMedia;
+
+        var constraints = {
+          video: false,
+          audio: true
+        };
+
+        try {
+          navigator.getUserMedia(constraints, successCallback, errorCallback);
+        } catch (data) {
+          var getUserMedia = navigator.mediaDevices.getUserMedia(constraints);
+          getUserMedia.then(successCallback);
+          getUserMedia.catch(errorCallback);
         }
-    }, {
-        key: 'trainingButtonDown',
-        value: function trainingButtonDown(event) {
-            var id = event.currentTarget.parentNode.id;
-            window.addEventListener('mouseup', this.trainingButtonUpEvent);
-            this.stopPredicting();
-            this.startTraining(id);
+      } catch (data) {
+        console.log(data);
+        errorCallback();
+      }
+    }
+  }, {
+    key: "startTraining",
+    value: function startTraining(name) {
+      this.currentClass = name;
+      if (!this.trainingData[this.currentClass]) {
+        this.trainingData[this.currentClass] = [];
+      }
+      this.training = true;
+      this.allowTraining = true;
+    }
+  }, {
+    key: "stopTraining",
+    value: function stopTraining() {
+      this.allowTraining = false;
+      this.training = false;
+    }
+  }, {
+    key: "startPredicting",
+    value: function startPredicting() {
+      this.allowPredicting = true;
+      this.predicting = true;
+    }
+  }, {
+    key: "stopPredicting",
+    value: function stopPredicting() {
+      this.allowPredicting = false;
+      this.predicting = false;
+    }
+  }, {
+    key: "updateSamples",
+    value: function updateSamples() {
+      var numSamples = {};
+
+      for (var key in this.trainingData) {
+        numSamples[key] = this.trainingData[key].length;
+      }
+
+      this.trainingButtons.forEach(function (button) {
+        var id = button.parentNode.id;
+        var counter = button.parentNode.children[1].children[0];
+        counter.textContent = numSamples[id];
+      });
+
+      var event = new CustomEvent("sample-update", {
+        detail: {
+          numSamples: numSamples
         }
-    }, {
-        key: 'trainingButtonUp',
-        value: function trainingButtonUp() {
-            window.removeEventListener('mouseup', this.trainingButtonUpEvent);
-            this.stopTraining();
-            this.startPredicting();
+      });
+      window.dispatchEvent(event);
+    }
+  }, {
+    key: "audioCallback",
+    value: function audioCallback(data) {
+      var _this5 = this;
+
+      this.visual = data.loudness.specific;
+
+      var peaked = false;
+      for (var index = 0; index < data.mfcc.length; index += 1) {
+        if (Math.abs(data.mfcc[index]) >= this.config.threshold) {
+          peaked = true;
         }
-    }, {
-        key: 'confirmClear',
-        value: function confirmClear(event) {
-            var id = event.currentTarget.parentNode.id;
-            var test = confirm('Are you sure you want to clear "' + id + '"');
-            if (test) {
-                this.clearClass(id);
-            }
-        }
-    }, {
-        key: 'confirmClearAll',
-        value: function confirmClearAll(event) {
-            var test = confirm('Are you sure you want to clear all classes');
-            if (test) {
-                this.clearAll();
-            }
-        }
-    }, {
-        key: 'setDataSet',
-        value: function setDataSet(json) {
-            this.clearAll();
-            this.trainingData = {};
-            var data = {};
+      }
+      this.peaked = peaked;
 
-            for (var key in json) {
-                data[key] = JSON.parse(json[key]);
-                this.trainingData[key] = [];
+      if (this.training || this.predicting) {
+        if (peaked) {
+          if (this.training && this.allowTraining) {
+            this.knn.learn(data.mfcc, this.currentClass);
 
-                var length = data[key].length;
-                for (var index = 0; index < length; index += 1) {
-                    this.knn.learn(data[key][index], key);
-                    this.trainingData[key].push(data[key][index]);
-                }
-            }
-            this.updateSamples();
-            this.stopTraining();
-            this.startPredicting();
-        }
-    }, {
-        key: 'saveDataSet',
-        value: function saveDataSet() {
-
-            var object = {};
-            for (var key in this.trainingData) {
-                object[key] = JSON.stringify(this.trainingData[key]);
-            }
-            var string = JSON.stringify(object);
-            var blob = new Blob([string], { type: 'application/json' });
-            var url = URL.createObjectURL(blob);
-
-            var link = document.createElement('a');
-            link.href = url;
-            link.download = 'dataset.json';
-            link.click();
-        }
-    }, {
-        key: 'setFileName',
-        value: function setFileName(name) {
-            document.querySelector('#data-title').textContent = name;
-        }
-    }, {
-        key: 'loadDefaultDataSet',
-        value: function loadDefaultDataSet() {
-            var _this2 = this;
-
-            var request = new XMLHttpRequest();
-            var filename = 'datasets/default.json?t=' + new Date().getTime();
-            request.onreadystatechange = function () {
-                if (request.readyState === 4 && request.status === 200) {
-                    var data = JSON.parse(request.responseText);
-                    _this2.setDataSet(data);
-                    _this2.setFileName('default.json');
-                }
-            };
-            request.open('get', filename, true);
-            request.send();
-        }
-    }, {
-        key: 'loadDataSet',
-        value: function loadDataSet() {
-            var _this3 = this;
-
-            var input = document.createElement('input');
-            input.type = 'file';
-            input.addEventListener('change', function (event) {
-                if (input.files.length > 0) {
-                    var file = input.files[0];
-                    var name = file.name;
-                    var fileReader = new FileReader();
-                    fileReader.onload = function (event) {
-                        var lines = event.target.result;
-                        var data = JSON.parse(lines);
-                        _this3.setDataSet(data);
-                        _this3.setFileName(name);
-                    };
-                    fileReader.readAsText(file);
-                }
-            });
-            input.click();
-        }
-
-        // toggle() {
-        // this.allowPredicting = !this.allowPredicting
-        // this.predicting = this.allowPredicting
-        // if (this.allowPredicting) {
-        //     document.querySelector('#toggle').textContent = 'Disable prediction'
-        // }else {
-        //     document.querySelector('#toggle').textContent = 'Enable prediction'
-        // }
-        // }
-
-
-    }, {
-        key: 'enable',
-        value: function enable() {
-            this.allowBroadcasting = true;
-            document.querySelector('#disable').style.opacity = 1;
-            document.querySelector('#enable').style.opacity = 0.5;
-            document.querySelector('#enable').textContent = 'Enabled';
-            document.querySelector('#disable').textContent = 'Disable';
-        }
-    }, {
-        key: 'disable',
-        value: function disable() {
-            this.allowBroadcasting = false;
-            document.querySelector('#disable').style.opacity = 0.5;
-            document.querySelector('#disable').textContent = 'Disabled';
-            document.querySelector('#enable').textContent = 'Enable';
-            document.querySelector('#enable').style.opacity = 1;
-        }
-    }, {
-        key: 'setupGUI',
-        value: function setupGUI() {
-            var _this4 = this;
-
-            this.element = document.querySelector('#settings');
-            this.canvas = document.querySelector('#vizualizer');
-            this.ctx = this.canvas.getContext('2d');
-            this.hideGUI();
-
-            var closeButton = document.querySelector('.close-button');
-            closeButton.addEventListener('click', this.hideGUI.bind(this));
-
-            document.querySelector('#disable').addEventListener('click', this.disable.bind(this));
-            document.querySelector('#enable').addEventListener('click', this.enable.bind(this));
-            this.enable();
-            // document.querySelector('#toggle').addEventListener('click', this.toggle.bind(this));
-            document.querySelector('#save').addEventListener('click', this.saveDataSet.bind(this));
-            document.querySelector('#load').addEventListener('click', this.loadDataSet.bind(this));
-            document.querySelector('#change-k').textContent = 'Change K: ' + this.knn.topK;
-            document.querySelector('#change-k').addEventListener('click', this.changeK.bind(this));
-
-            document.querySelector('#change-threshold').textContent = 'Change Threshold: ' + this.config.threshold;
-            document.querySelector('#change-threshold').addEventListener('click', this.changeThreshold.bind(this));
-            document.querySelector('#clear').addEventListener('click', this.confirmClearAll.bind(this));
-            this.trainingButtonUpEvent = this.trainingButtonUp.bind(this);
-            this.trainingButtons = document.querySelectorAll('.sound-classes a.train');
-            this.trainingButtons.forEach(function (button) {
-                button.addEventListener('mousedown', _this4.trainingButtonDown.bind(_this4));
-            });
-
-            this.clearButtons = document.querySelectorAll('.sound-classes a.clear');
-            this.clearButtons.forEach(function (button) {
-                button.addEventListener('click', _this4.confirmClear.bind(_this4));
-            });
-
-            this.loadDefaultDataSet();
-
-            window.addEventListener('keydown', this.keyDown.bind(this));
-        }
-    }, {
-        key: 'save',
-        value: function save() {
-            var object = {};
-            for (var key in this.trainingData) {
-                object[key] = JSON.stringify(this.trainingData[key]);
-            }
-            var string = JSON.stringify(object);
-        }
-    }, {
-        key: 'clearClass',
-        value: function clearClass(name) {
-            this.knn.deleteClassData(name);
-            this.trainingData[name] = [];
-            this.updateSamples();
-        }
-    }, {
-        key: 'clearAll',
-        value: function clearAll() {
-            this.setFileName('');
-            for (var key in this.trainingData) {
-                this.clearClass(key);
-            }
-            this.trainingData = {};
-        }
-    }, {
-        key: 'initializeMicrophoneSampling',
-        value: function initializeMicrophoneSampling() {
-            var that = this;
-
-            function errorCallback(err) {
-                throw err;
-            }
-
-            function successCallback(mediaStream) {
-                window.mediaStream = mediaStream;
-                that.source = that.context.createMediaStreamSource(window.mediaStream);
-                that.meyda.setSource(that.source);
-                that.meyda.start();
-            }
-
-            try {
-                navigator.getUserMedia = navigator.webkitGetUserMedia || navigator.getUserMedia;
-
-                var constraints = {
-                    video: false,
-                    audio: true
-                };
-
-                try {
-                    navigator.getUserMedia(constraints, successCallback, errorCallback);
-                } catch (data) {
-                    var getUserMedia = navigator.mediaDevices.getUserMedia(constraints);
-                    getUserMedia.then(successCallback);
-                    getUserMedia.catch(errorCallback);
-                }
-            } catch (data) {
-                errorCallback();
-            }
-        }
-    }, {
-        key: 'startTraining',
-        value: function startTraining(name) {
-            this.currentClass = name;
             if (!this.trainingData[this.currentClass]) {
-                this.trainingData[this.currentClass] = [];
+              this.trainingData[this.currentClass] = [];
             }
-            this.training = true;
-            this.allowTraining = true;
-        }
-    }, {
-        key: 'stopTraining',
-        value: function stopTraining() {
+            this.trainingData[this.currentClass].push(data.mfcc);
+
+            this.updateSamples();
+
+            if (this.timer) {
+              clearTimeout(this.timer);
+            }
             this.allowTraining = false;
-            this.training = false;
-        }
-    }, {
-        key: 'startPredicting',
-        value: function startPredicting() {
-            this.allowPredicting = true;
-            this.predicting = true;
-        }
-    }, {
-        key: 'stopPredicting',
-        value: function stopPredicting() {
+            this.timer = setTimeout(function () {
+              _this5.allowTraining = true;
+            }, this.config.trainPause);
+          } else if (this.predicting && this.allowPredicting) {
+            var prediction = this.knn.predict(data.mfcc);
+            document.querySelector("#prediction").textContent = prediction.prediction;
+            if (this.allowBroadcasting) {
+              var event = new CustomEvent("prediction", {
+                detail: { prediction: prediction }
+              });
+              window.dispatchEvent(event);
+            }
+
+            if (this.timer) {
+              clearTimeout(this.timer);
+            }
             this.allowPredicting = false;
-            this.predicting = false;
+            this.timer = setTimeout(function () {
+              document.querySelector("#prediction").textContent = "";
+              _this5.allowPredicting = true;
+            }, this.config.trainPause);
+          }
         }
-    }, {
-        key: 'updateSamples',
-        value: function updateSamples() {
-            var numSamples = {};
+      }
+    }
+  }]);
 
-            for (var key in this.trainingData) {
-                numSamples[key] = this.trainingData[key].length;
-            }
-
-            this.trainingButtons.forEach(function (button) {
-                var id = button.parentNode.id;
-                var counter = button.parentNode.children[1].children[0];
-                counter.textContent = numSamples[id];
-            });
-
-            var event = new CustomEvent('sample-update', {
-                detail: {
-                    numSamples: numSamples
-                }
-            });
-            window.dispatchEvent(event);
-        }
-    }, {
-        key: 'audioCallback',
-        value: function audioCallback(data) {
-            var _this5 = this;
-
-            this.visual = data.loudness.specific;
-
-            var peaked = false;
-            for (var index = 0; index < data.mfcc.length; index += 1) {
-                if (Math.abs(data.mfcc[index]) >= this.config.threshold) {
-                    peaked = true;
-                }
-            }
-            this.peaked = peaked;
-
-            if (this.training || this.predicting) {
-
-                if (peaked) {
-                    if (this.training && this.allowTraining) {
-                        this.knn.learn(data.mfcc, this.currentClass);
-
-                        if (!this.trainingData[this.currentClass]) {
-                            this.trainingData[this.currentClass] = [];
-                        }
-                        this.trainingData[this.currentClass].push(data.mfcc);
-
-                        this.updateSamples();
-
-                        if (this.timer) {
-                            clearTimeout(this.timer);
-                        }
-                        this.allowTraining = false;
-                        this.timer = setTimeout(function () {
-                            _this5.allowTraining = true;
-                        }, this.config.trainPause);
-                    } else if (this.predicting && this.allowPredicting) {
-                        var prediction = this.knn.predict(data.mfcc);
-                        document.querySelector('#prediction').textContent = prediction.prediction;
-                        if (this.allowBroadcasting) {
-                            var event = new CustomEvent('prediction', { detail: { prediction: prediction } });
-                            window.dispatchEvent(event);
-                        }
-
-                        if (this.timer) {
-                            clearTimeout(this.timer);
-                        }
-                        this.allowPredicting = false;
-                        this.timer = setTimeout(function () {
-                            document.querySelector('#prediction').textContent = '';
-                            _this5.allowPredicting = true;
-                        }, this.config.trainPause);
-                    }
-                }
-            }
-        }
-    }]);
-
-    return AudioClassifier;
+  return AudioClassifier;
 }();
 
 exports.default = AudioClassifier;
@@ -751,55 +754,55 @@ var BigNumber = function () {
 exports.default = BigNumber;
 
 },{"./../main.js":15}],5:[function(require,module,exports){
-'use strict';
+"use strict";
 
 Object.defineProperty(exports, "__esModule", {
-    value: true
+  value: true
 });
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _main = require('./../main');
+var _main = require("./../main");
 
 var _main2 = _interopRequireDefault(_main);
 
-var _Player = require('./Player');
+var _Player = require("./Player");
 
 var _Player2 = _interopRequireDefault(_Player);
 
-var _Moon = require('./Moon');
+var _Moon = require("./Moon");
 
 var _Moon2 = _interopRequireDefault(_Moon);
 
-var _Backdrop = require('./Backdrop');
+var _Backdrop = require("./Backdrop");
 
 var _Backdrop2 = _interopRequireDefault(_Backdrop);
 
-var _Mountain = require('./Mountain');
+var _Mountain = require("./Mountain");
 
 var _Mountain2 = _interopRequireDefault(_Mountain);
 
-var _Section = require('./Section');
+var _Section = require("./Section");
 
 var _Section2 = _interopRequireDefault(_Section);
 
-var _Icon = require('./Icon');
+var _Icon = require("./Icon");
 
 var _Icon2 = _interopRequireDefault(_Icon);
 
-var _Title = require('./Title');
+var _Title = require("./Title");
 
 var _Title2 = _interopRequireDefault(_Title);
 
-var _BigNumber = require('./BigNumber');
+var _BigNumber = require("./BigNumber");
 
 var _BigNumber2 = _interopRequireDefault(_BigNumber);
 
-var _ScoreBoard = require('./ScoreBoard');
+var _ScoreBoard = require("./ScoreBoard");
 
 var _ScoreBoard2 = _interopRequireDefault(_ScoreBoard);
 
-var _AudioClassifier = require('./../ai/AudioClassifier');
+var _AudioClassifier = require("./../ai/AudioClassifier");
 
 var _AudioClassifier2 = _interopRequireDefault(_AudioClassifier);
 
@@ -808,451 +811,484 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var Game = function () {
-    function Game() {
-        _classCallCheck(this, Game);
+  function Game() {
+    _classCallCheck(this, Game);
 
-        this.paused = true;
-        _main2.default.speed = this.speed = 0;
-        _main2.default.debug = false;
-        _main2.default.clapSound = document.querySelector('#clap-sound');
-        _main2.default.ohSound = document.querySelector('#oh-sound');
+    this.paused = true;
+    _main2.default.speed = this.speed = 0;
+    _main2.default.debug = false;
+    _main2.default.clapSound = document.querySelector("#clap-sound");
+    _main2.default.ohSound = document.querySelector("#oh-sound");
 
-        this.speedCounter = 0;
-        this.resetCounter = 0;
-        this.counter = 0;
-        this.scoreBoard = new _ScoreBoard2.default();
-        _main2.default.score = 0;
-        _main2.default.canvas = this.canvas = document.querySelector('#canvas');
-        this.canvas.width = _main2.default.width;
-        this.canvas.height = _main2.default.height;
-        this.context = this.canvas.getContext('2d');
+    this.speedCounter = 0;
+    this.resetCounter = 0;
+    this.counter = 0;
+    this.scoreBoard = new _ScoreBoard2.default();
+    _main2.default.score = 0;
+    _main2.default.canvas = this.canvas = document.querySelector("#canvas");
+    this.canvas.width = _main2.default.width;
+    this.canvas.height = _main2.default.height;
+    this.context = this.canvas.getContext("2d");
 
-        _main2.default.classes = {};
-        _main2.default.allowTraining = false;
+    _main2.default.classes = {};
+    _main2.default.allowTraining = false;
 
-        _main2.default.soundClassifier = new _AudioClassifier2.default({
-            k: 5,
-            threshold: 30
-        });
-        window.addEventListener('prediction', this.predictionCallback.bind(this));
+    window.addEventListener("click", this.clickStart.bind(this));
+    // Q.soundClassifier = new SoundClassifier({
+    // 	k: 5,
+    // 	threshold: 30
+    // })
+    // window.addEventListener('prediction', this.predictionCallback.bind(this));
 
-        _main2.default.allowMicrophone = false;
-        _main2.default.player = this.player = new _Player2.default();
+    // Q.allowMicrophone = false
+    // Q.player = this.player = new Player()
 
-        _main2.default.duckIcon = new _Icon2.default('clap');
-        _main2.default.jumpIcon = new _Icon2.default('say');
-        _main2.default.title = new _Title2.default('main');
-        _main2.default.jumpTitle = new _Title2.default('jump');
-        _main2.default.duckTitle = new _Title2.default('duck');
-        _main2.default.retryTitle = new _Title2.default('retry');
-        _main2.default.countdownTitle = new _BigNumber2.default(3);
-        _main2.default.countdownTitle.x = (720 - 80) / 2;
-        _main2.default.countdownTitle.y = (570 - 200) / 2;
+    // Q.duckIcon = new Icon('clap')
+    // Q.jumpIcon = new Icon('say')
+    // Q.title = new Title('main')
+    // Q.jumpTitle = new Title('jump')
+    // Q.duckTitle = new Title('duck')
+    // Q.retryTitle = new Title('retry')
+    // Q.countdownTitle = new BigNumber(3)
+    // Q.countdownTitle.x = (720 - 80) / 2
+    // Q.countdownTitle.y = (570 - 200) / 2
 
-        _main2.default.showRetry = false;
-        window.addEventListener('keydown', this.keydown.bind(this));
-        window.addEventListener('hit', this.hit.bind(this));
+    // Q.showRetry = false
+    // window.addEventListener('keydown', this.keydown.bind(this))
+    // window.addEventListener('hit', this.hit.bind(this))
 
-        _main2.default.timeoutTimer = null;
-        this.reset(false);
+    // Q.timeoutTimer = null
+    // this.reset(false)
 
-        this.playing = false;
-        this.isFirst = 0;
+    // this.playing = false
+    // this.isFirst = 0
+  }
+
+  _createClass(Game, [{
+    key: "clickStart",
+    value: function clickStart(event) {
+      window.removeEventListener("click", this.clickStart.bind(this));
+      _main2.default.soundClassifier = new _AudioClassifier2.default({
+        k: 5,
+        threshold: 30
+      });
+      window.addEventListener("prediction", this.predictionCallback.bind(this));
+
+      _main2.default.allowMicrophone = false;
+      _main2.default.player = this.player = new _Player2.default();
+
+      _main2.default.duckIcon = new _Icon2.default("clap");
+      _main2.default.jumpIcon = new _Icon2.default("say");
+      _main2.default.title = new _Title2.default("main");
+      _main2.default.jumpTitle = new _Title2.default("jump");
+      _main2.default.duckTitle = new _Title2.default("duck");
+      _main2.default.retryTitle = new _Title2.default("retry");
+      _main2.default.countdownTitle = new _BigNumber2.default(3);
+      _main2.default.countdownTitle.x = (720 - 80) / 2;
+      _main2.default.countdownTitle.y = (570 - 200) / 2;
+
+      _main2.default.showRetry = false;
+      window.addEventListener("keydown", this.keydown.bind(this));
+      window.addEventListener("hit", this.hit.bind(this));
+
+      _main2.default.timeoutTimer = null;
+      this.reset(false);
+
+      this.playing = false;
+      this.isFirst = 0;
     }
+  }, {
+    key: "reset",
+    value: function reset(isIntro) {
+      if (_main2.default.tutorialTimeline) {
+        _main2.default.tutorialTimeline.kill();
+      }
 
-    _createClass(Game, [{
-        key: 'reset',
-        value: function reset(isIntro) {
-            if (_main2.default.tutorialTimeline) {
-                _main2.default.tutorialTimeline.kill();
-            }
+      _main2.default.showRetry = false;
+      _main2.default.showTitle = false;
+      _main2.default.showDuck = false;
+      _main2.default.showJump = false;
+      _main2.default.score = 0;
+      this.resetCounter = 0;
+      this.scoreBoard.set(_main2.default.score);
+      this.dead = false;
 
-            _main2.default.showRetry = false;
-            _main2.default.showTitle = false;
-            _main2.default.showDuck = false;
-            _main2.default.showJump = false;
-            _main2.default.score = 0;
-            this.resetCounter = 0;
-            this.scoreBoard.set(_main2.default.score);
-            this.dead = false;
+      this.backdrops = [];
+      this.backdrops.push(new _Backdrop2.default(0));
 
-            this.backdrops = [];
-            this.backdrops.push(new _Backdrop2.default(0));
+      this.mountainsBack = [];
+      this.mountainsBack.push(new _Mountain2.default(0));
 
-            this.mountainsBack = [];
-            this.mountainsBack.push(new _Mountain2.default(0));
+      this.mountainsMiddle = [];
+      this.mountainsMiddle.push(new _Mountain2.default(1));
 
-            this.mountainsMiddle = [];
-            this.mountainsMiddle.push(new _Mountain2.default(1));
+      this.mountainsFront = [];
+      this.mountainsFront.push(new _Mountain2.default(2));
 
-            this.mountainsFront = [];
-            this.mountainsFront.push(new _Mountain2.default(2));
+      this.sections = [];
+      this.sections.push(new _Section2.default(0, true));
 
-            this.sections = [];
-            this.sections.push(new _Section2.default(0, true));
+      _main2.default.player.reset();
+      _main2.default.score = 0;
+      if (isIntro === true) {
+        this.intro();
+      } else {
+        _main2.default.isIntro = false;
 
-            _main2.default.player.reset();
-            _main2.default.score = 0;
-            if (isIntro === true) {
-                this.intro();
+        if (_main2.default.tutorialTimeline) {
+          _main2.default.tutorialTimeline.pause();
+        }
+        _main2.default.player.run();
+        this.startGame();
+      }
+    }
+  }, {
+    key: "tutorialCompleted",
+    value: function tutorialCompleted() {
+      if (_main2.default.tutorialTimeline) {
+        _main2.default.tutorialTimeline.kill();
+      }
+      _main2.default.showTitle = false;
+      _main2.default.showDuck = false;
+      _main2.default.showJump = false;
+      _main2.default.showRetry = false;
+
+      _main2.default.showScore = true;
+      _main2.default.isIntro = false;
+      _main2.default.soundClassifier.enable();
+    }
+  }, {
+    key: "startTutorial",
+    value: function startTutorial() {
+      _main2.default.soundClassifier.disable();
+      _main2.default.showRetry = false;
+
+      _main2.default.tutorialTimeline = new TimelineMax({
+        onComplete: this.tutorialCompleted.bind(this)
+      });
+
+      _main2.default.showTitle = false;
+
+      _main2.default.tutorialTimeline.to(_main2.default.duckIcon, 4.6, {
+        delay: 0.5,
+        onStart: function onStart() {
+          _main2.default.showDuck = true;
+        },
+        onComplete: function onComplete() {
+          _main2.default.showDuck = false;
+        }
+      });
+
+      _main2.default.tutorialTimeline.to(_main2.default.jumpIcon, 5.2, {
+        delay: 0.5,
+        onStart: function onStart() {
+          _main2.default.showJump = true;
+        },
+        onComplete: function onComplete() {
+          _main2.default.showJump = false;
+        }
+      });
+
+      var counter = 3;
+
+      _main2.default.tutorialTimeline.to(_main2.default.countdownTitle, 1, {
+        delay: 0.2,
+        repeat: 3,
+        onRepeat: function onRepeat() {
+          counter -= 1;
+          if (counter < 1) {
+            _main2.default.countdownTitle.clear();
+          } else {
+            _main2.default.countdownTitle.set(counter);
+          }
+        },
+        onStart: function onStart() {
+          _main2.default.countdownTitle.set(counter);
+          _main2.default.showCountdown = true;
+        },
+        onComplete: function onComplete() {
+          _main2.default.showCountdown = false;
+        }
+      });
+    }
+  }, {
+    key: "intro",
+    value: function intro() {
+      this.reset();
+      _main2.default.speed = 4;
+      _main2.default.showScore = false;
+      _main2.default.player.run();
+      _main2.default.score = 0;
+      _main2.default.isIntro = true;
+      _main2.default.showPlayer = true;
+      _main2.default.showRetry = false;
+
+      _main2.default.showTitle = true;
+
+      _main2.default.soundClassifier.enable();
+      if (this.timer) {
+        cancelAnimationFrame(this.timer);
+      }
+      this.timer = requestAnimationFrame(this.render.bind(this));
+    }
+  }, {
+    key: "keydown",
+    value: function keydown(event) {
+      if (event.keyCode === 13) {
+        this.paused = !this.paused;
+        if (this.paused) {
+          this.stopGame();
+        } else {
+          this.startGame();
+        }
+      } else if (event.keyCode === 32) {
+        this.reset(false);
+      } else if (event.keyCode === 38) {
+        event.preventDefault();
+        this.player.jump();
+      } else if (event.keyCode === 40) {
+        event.preventDefault();
+        this.player.duck();
+      }
+    }
+  }, {
+    key: "resetTimeout",
+    value: function resetTimeout() {
+      if (_main2.default.timeoutTimer) {
+        clearTimeout(_main2.default.timeoutTimer);
+      }
+      // Q.timeoutTimer = setTimeout(this.intro.bind(this), 30000)
+    }
+  }, {
+    key: "predictionCallback",
+    value: function predictionCallback(event) {
+      var prediction = event.detail.prediction.prediction;
+
+      this.resetTimeout();
+
+      if (_main2.default.isIntro) {
+        this.startTutorial();
+      } else {
+        if (prediction === "jump") {
+          this.player.jump();
+        }
+
+        if (prediction === "duck") {
+          this.player.duck();
+          if (this.dead) {
+            if (this.resetCounter < 1) {
+              this.resetCounter += 1;
             } else {
-                _main2.default.isIntro = false;
-
-                if (_main2.default.tutorialTimeline) {
-                    _main2.default.tutorialTimeline.pause();
-                }
-                _main2.default.player.run();
-                this.startGame();
+              this.reset(false);
             }
+          }
         }
-    }, {
-        key: 'tutorialCompleted',
-        value: function tutorialCompleted() {
-            if (_main2.default.tutorialTimeline) {
-                _main2.default.tutorialTimeline.kill();
-            }
-            _main2.default.showTitle = false;
-            _main2.default.showDuck = false;
-            _main2.default.showJump = false;
-            _main2.default.showRetry = false;
+      }
+    }
+  }, {
+    key: "pause",
+    value: function pause() {
+      if (!this.paused) {
+        this.paused = true;
+        this.stopGame();
+      }
+    }
+  }, {
+    key: "unpause",
+    value: function unpause() {
+      if (this.paused) {
+        this.paused = false;
+        this.startGame();
+      }
+    }
+  }, {
+    key: "startGame",
+    value: function startGame() {
+      _main2.default.isIntro = false;
+      _main2.default.showPlayer = true;
+      _main2.default.showScore = true;
+      _main2.default.showDuck = false;
+      _main2.default.showJump = false;
+      _main2.default.speed = 4;
+      _main2.default.player.run();
+      _main2.default.score = 0;
+      _main2.default.soundClassifier.disable();
 
-            _main2.default.showScore = true;
-            _main2.default.isIntro = false;
-            _main2.default.soundClassifier.enable();
+      _main2.default.soundTimer = setTimeout(function () {
+        _main2.default.soundClassifier.enable();
+      }, 600);
+
+      this.stopGame();
+      this.timer = requestAnimationFrame(this.render.bind(this));
+      this.player.resume();
+      this.resetTimeout();
+    }
+  }, {
+    key: "stopGame",
+    value: function stopGame() {
+      if (this.timer) {
+        cancelAnimationFrame(this.timer);
+      }
+
+      this.player.pause();
+    }
+  }, {
+    key: "hit",
+    value: function hit(event) {
+      _main2.default.speed = 0;
+      _main2.default.player.dead();
+      this.dead = true;
+      _main2.default.showRetry = true;
+    }
+  }, {
+    key: "render",
+    value: function render() {
+      var _this = this;
+
+      this.context.clearRect(0, 0, _main2.default.width, _main2.default.height);
+
+      var removeBackdrop = false;
+      this.backdrops.forEach(function (backdrop) {
+        backdrop.x -= _main2.default.speed * 0;
+        backdrop.render(_this.context);
+
+        if (backdrop.x + backdrop.width < _main2.default.width && _this.backdrops.length < 2) {
+          _this.backdrops.push(new _Backdrop2.default(backdrop.x + backdrop.width - 0.5));
+        } else if (backdrop.x + backdrop.width < 0) {
+          removeBackdrop = true;
         }
-    }, {
-        key: 'startTutorial',
-        value: function startTutorial() {
-            _main2.default.soundClassifier.disable();
-            _main2.default.showRetry = false;
+      });
 
-            _main2.default.tutorialTimeline = new TimelineMax({
-                onComplete: this.tutorialCompleted.bind(this)
-            });
+      if (removeBackdrop) {
+        this.backdrops.shift();
+      }
 
-            _main2.default.showTitle = false;
+      this.mountainsBack.forEach(function (mountain) {
+        mountain.x -= _main2.default.speed * 0.05;
+        mountain.render(_this.context);
+      });
 
-            _main2.default.tutorialTimeline.to(_main2.default.duckIcon, 4.6, {
-                delay: 0.5,
-                onStart: function onStart() {
-                    _main2.default.showDuck = true;
-                },
-                onComplete: function onComplete() {
-                    _main2.default.showDuck = false;
-                }
-            });
+      if (this.mountainsBack.length === 1 && this.mountainsBack[0].x + this.mountainsBack[0].width < _main2.default.width) {
+        var mountain = new _Mountain2.default(0);
+        mountain.x = this.mountainsBack[0].x + this.mountainsBack[0].width - 0.5;
+        this.mountainsBack.push(mountain);
+      }
 
-            _main2.default.tutorialTimeline.to(_main2.default.jumpIcon, 5.2, {
-                delay: 0.5,
-                onStart: function onStart() {
-                    _main2.default.showJump = true;
-                },
-                onComplete: function onComplete() {
-                    _main2.default.showJump = false;
-                }
-            });
+      if (this.mountainsBack[0].x + this.mountainsBack[0].width < 0) {
+        this.mountainsBack.shift();
+      }
 
-            var counter = 3;
+      this.mountainsMiddle.forEach(function (mountain) {
+        mountain.x -= _main2.default.speed * 0.1;
+        mountain.render(_this.context);
+      });
 
-            _main2.default.tutorialTimeline.to(_main2.default.countdownTitle, 1, {
-                delay: 0.2,
-                repeat: 3,
-                onRepeat: function onRepeat() {
-                    counter -= 1;
-                    if (counter < 1) {
-                        _main2.default.countdownTitle.clear();
-                    } else {
-                        _main2.default.countdownTitle.set(counter);
-                    }
-                },
-                onStart: function onStart() {
-                    _main2.default.countdownTitle.set(counter);
-                    _main2.default.showCountdown = true;
-                },
-                onComplete: function onComplete() {
-                    _main2.default.showCountdown = false;
-                }
-            });
+      if (this.mountainsMiddle.length === 1 && this.mountainsMiddle[0].x + this.mountainsMiddle[0].width < _main2.default.width) {
+        var _mountain = new _Mountain2.default(1);
+        _mountain.x = this.mountainsMiddle[0].x + this.mountainsMiddle[0].width - 0.5;
+        this.mountainsMiddle.push(_mountain);
+      }
+
+      if (this.mountainsMiddle[0].x + this.mountainsMiddle[0].width < 0) {
+        this.mountainsMiddle.shift();
+      }
+
+      this.mountainsFront.forEach(function (mountain) {
+        mountain.x -= _main2.default.speed * 0.3;
+        mountain.render(_this.context);
+      });
+
+      if (this.mountainsFront.length === 1 && this.mountainsFront[0].x + this.mountainsFront[0].width < _main2.default.width) {
+        var _mountain2 = new _Mountain2.default(2);
+        _mountain2.x = this.mountainsFront[0].x + this.mountainsFront[0].width - 0.5;
+        this.mountainsFront.push(_mountain2);
+      }
+
+      if (this.mountainsFront[0].x + this.mountainsFront[0].width < 0) {
+        this.mountainsFront.shift();
+      }
+
+      var removeSection = false;
+      this.sections.forEach(function (section) {
+        section.x -= _main2.default.speed;
+        section.render(_this.context);
+
+        if (section.x + section.width < _main2.default.width && _this.sections.length < 2) {
+          _this.sections.push(new _Section2.default(section.x + section.width - _main2.default.speed, _main2.default.isIntro));
+        } else if (section.x + section.width < 0) {
+          removeSection = true;
         }
-    }, {
-        key: 'intro',
-        value: function intro() {
-            this.reset();
-            _main2.default.speed = 4;
-            _main2.default.showScore = false;
-            _main2.default.player.run();
-            _main2.default.score = 0;
-            _main2.default.isIntro = true;
-            _main2.default.showPlayer = true;
-            _main2.default.showRetry = false;
+      });
 
-            _main2.default.showTitle = true;
+      if (removeSection) {
+        this.sections.shift();
+      }
 
-            _main2.default.soundClassifier.enable();
-            if (this.timer) {
-                cancelAnimationFrame(this.timer);
-            }
-            this.timer = requestAnimationFrame(this.render.bind(this));
+      if (_main2.default.showPlayer) {
+        this.player.render(this.context);
+      }
+
+      if (!this.dead && this.counter % 10 === 0 && !_main2.default.isIntro) {
+        _main2.default.score += 1;
+        this.scoreBoard.set(_main2.default.score);
+        this.counter = 0;
+      }
+
+      this.counter += 1;
+
+      if (_main2.default.showScore) {
+        this.scoreBoard.render(this.context);
+      }
+
+      if (!this.dead && !_main2.default.isIntro) {
+        if (this.speedCounter % 120 === 0) {
+          _main2.default.speed += 0.1;
+          this.speedCounter = 0;
         }
-    }, {
-        key: 'keydown',
-        value: function keydown(event) {
-            if (event.keyCode === 13) {
-                this.paused = !this.paused;
-                if (this.paused) {
-                    this.stopGame();
-                } else {
-                    this.startGame();
-                }
-            } else if (event.keyCode === 32) {
-                this.reset(false);
-            } else if (event.keyCode === 38) {
-                event.preventDefault();
-                this.player.jump();
-            } else if (event.keyCode === 40) {
-                event.preventDefault();
-                this.player.duck();
-            }
-        }
-    }, {
-        key: 'resetTimeout',
-        value: function resetTimeout() {
-            if (_main2.default.timeoutTimer) {
-                clearTimeout(_main2.default.timeoutTimer);
-            }
-            // Q.timeoutTimer = setTimeout(this.intro.bind(this), 30000)
-        }
-    }, {
-        key: 'predictionCallback',
-        value: function predictionCallback(event) {
-            var prediction = event.detail.prediction.prediction;
+        this.speedCounter += 1;
+      }
 
-            this.resetTimeout();
+      if (_main2.default.showDuck) {
+        _main2.default.duckIcon.render(this.context);
+        _main2.default.duckTitle.render(this.context);
+      }
 
-            if (_main2.default.isIntro) {
-                this.startTutorial();
-            } else {
+      if (_main2.default.showJump) {
+        _main2.default.jumpIcon.render(this.context);
+        _main2.default.jumpTitle.render(this.context);
+      }
 
-                if (prediction === 'jump') {
-                    this.player.jump();
-                }
+      if (_main2.default.showTitle) {
+        _main2.default.title.render(this.context);
+      }
 
-                if (prediction === 'duck') {
-                    this.player.duck();
-                    if (this.dead) {
-                        if (this.resetCounter < 1) {
-                            this.resetCounter += 1;
-                        } else {
-                            this.reset(false);
-                        }
-                    }
-                }
-            }
-        }
-    }, {
-        key: 'pause',
-        value: function pause() {
-            if (!this.paused) {
-                this.paused = true;
-                this.stopGame();
-            }
-        }
-    }, {
-        key: 'unpause',
-        value: function unpause() {
-            if (this.paused) {
-                this.paused = false;
-                this.startGame();
-            }
-        }
-    }, {
-        key: 'startGame',
-        value: function startGame() {
-            _main2.default.isIntro = false;
-            _main2.default.showPlayer = true;
-            _main2.default.showScore = true;
-            _main2.default.showDuck = false;
-            _main2.default.showJump = false;
-            _main2.default.speed = 4;
-            _main2.default.player.run();
-            _main2.default.score = 0;
-            _main2.default.soundClassifier.disable();
+      if (_main2.default.showCountdown) {
+        _main2.default.countdownTitle.render(this.context);
+      }
 
-            _main2.default.soundTimer = setTimeout(function () {
-                _main2.default.soundClassifier.enable();
-            }, 600);
+      if (_main2.default.showRetry) {
+        _main2.default.retryTitle.render(this.context);
+      }
 
-            this.stopGame();
-            this.timer = requestAnimationFrame(this.render.bind(this));
-            this.player.resume();
-            this.resetTimeout();
-        }
-    }, {
-        key: 'stopGame',
-        value: function stopGame() {
-            if (this.timer) {
-                cancelAnimationFrame(this.timer);
-            }
+      // Debug
+      if (_main2.default.debug) {
+        this.context.fillStyle = "red";
+        this.context.fillRect(0, 0, 40, 40);
+        this.context.fillStyle = "green";
+        this.context.fillRect(_main2.default.width - 40, 0, 40, 40);
+        this.context.fillStyle = "blue";
+        this.context.fillRect(_main2.default.width - 40, _main2.default.height - 40, 40, 40);
+      }
 
-            this.player.pause();
-        }
-    }, {
-        key: 'hit',
-        value: function hit(event) {
-            _main2.default.speed = 0;
-            _main2.default.player.dead();
-            this.dead = true;
-            _main2.default.showRetry = true;
-        }
-    }, {
-        key: 'render',
-        value: function render() {
-            var _this = this;
+      if (!this.renderOnce) {
+        this.timer = requestAnimationFrame(this.render.bind(this));
+      } else {
+        this.renderOnce = false;
+      }
+    }
+  }]);
 
-            this.context.clearRect(0, 0, _main2.default.width, _main2.default.height);
-
-            var removeBackdrop = false;
-            this.backdrops.forEach(function (backdrop) {
-                backdrop.x -= _main2.default.speed * 0;
-                backdrop.render(_this.context);
-
-                if (backdrop.x + backdrop.width < _main2.default.width && _this.backdrops.length < 2) {
-                    _this.backdrops.push(new _Backdrop2.default(backdrop.x + backdrop.width - 0.5));
-                } else if (backdrop.x + backdrop.width < 0) {
-                    removeBackdrop = true;
-                }
-            });
-
-            if (removeBackdrop) {
-                this.backdrops.shift();
-            }
-
-            this.mountainsBack.forEach(function (mountain) {
-                mountain.x -= _main2.default.speed * 0.05;
-                mountain.render(_this.context);
-            });
-
-            if (this.mountainsBack.length === 1 && this.mountainsBack[0].x + this.mountainsBack[0].width < _main2.default.width) {
-                var mountain = new _Mountain2.default(0);
-                mountain.x = this.mountainsBack[0].x + this.mountainsBack[0].width - 0.5;
-                this.mountainsBack.push(mountain);
-            }
-
-            if (this.mountainsBack[0].x + this.mountainsBack[0].width < 0) {
-                this.mountainsBack.shift();
-            }
-
-            this.mountainsMiddle.forEach(function (mountain) {
-                mountain.x -= _main2.default.speed * 0.1;
-                mountain.render(_this.context);
-            });
-
-            if (this.mountainsMiddle.length === 1 && this.mountainsMiddle[0].x + this.mountainsMiddle[0].width < _main2.default.width) {
-                var _mountain = new _Mountain2.default(1);
-                _mountain.x = this.mountainsMiddle[0].x + this.mountainsMiddle[0].width - 0.5;
-                this.mountainsMiddle.push(_mountain);
-            }
-
-            if (this.mountainsMiddle[0].x + this.mountainsMiddle[0].width < 0) {
-                this.mountainsMiddle.shift();
-            }
-
-            this.mountainsFront.forEach(function (mountain) {
-                mountain.x -= _main2.default.speed * 0.3;
-                mountain.render(_this.context);
-            });
-
-            if (this.mountainsFront.length === 1 && this.mountainsFront[0].x + this.mountainsFront[0].width < _main2.default.width) {
-                var _mountain2 = new _Mountain2.default(2);
-                _mountain2.x = this.mountainsFront[0].x + this.mountainsFront[0].width - 0.5;
-                this.mountainsFront.push(_mountain2);
-            }
-
-            if (this.mountainsFront[0].x + this.mountainsFront[0].width < 0) {
-                this.mountainsFront.shift();
-            }
-
-            var removeSection = false;
-            this.sections.forEach(function (section) {
-                section.x -= _main2.default.speed;
-                section.render(_this.context);
-
-                if (section.x + section.width < _main2.default.width && _this.sections.length < 2) {
-                    _this.sections.push(new _Section2.default(section.x + section.width - _main2.default.speed, _main2.default.isIntro));
-                } else if (section.x + section.width < 0) {
-                    removeSection = true;
-                }
-            });
-
-            if (removeSection) {
-                this.sections.shift();
-            }
-
-            if (_main2.default.showPlayer) {
-                this.player.render(this.context);
-            }
-
-            if (!this.dead && this.counter % 10 === 0 && !_main2.default.isIntro) {
-                _main2.default.score += 1;
-                this.scoreBoard.set(_main2.default.score);
-                this.counter = 0;
-            }
-
-            this.counter += 1;
-
-            if (_main2.default.showScore) {
-                this.scoreBoard.render(this.context);
-            }
-
-            if (!this.dead && !_main2.default.isIntro) {
-                if (this.speedCounter % 120 === 0) {
-                    _main2.default.speed += 0.1;
-                    this.speedCounter = 0;
-                }
-                this.speedCounter += 1;
-            }
-
-            if (_main2.default.showDuck) {
-                _main2.default.duckIcon.render(this.context);
-                _main2.default.duckTitle.render(this.context);
-            }
-
-            if (_main2.default.showJump) {
-                _main2.default.jumpIcon.render(this.context);
-                _main2.default.jumpTitle.render(this.context);
-            }
-
-            if (_main2.default.showTitle) {
-                _main2.default.title.render(this.context);
-            }
-
-            if (_main2.default.showCountdown) {
-                _main2.default.countdownTitle.render(this.context);
-            }
-
-            if (_main2.default.showRetry) {
-                _main2.default.retryTitle.render(this.context);
-            }
-
-            // Debug
-            if (_main2.default.debug) {
-                this.context.fillStyle = 'red';
-                this.context.fillRect(0, 0, 40, 40);
-                this.context.fillStyle = 'green';
-                this.context.fillRect(_main2.default.width - 40, 0, 40, 40);
-                this.context.fillStyle = 'blue';
-                this.context.fillRect(_main2.default.width - 40, _main2.default.height - 40, 40, 40);
-            }
-
-            if (!this.renderOnce) {
-                this.timer = requestAnimationFrame(this.render.bind(this));
-            } else {
-                this.renderOnce = false;
-            }
-        }
-    }]);
-
-    return Game;
+  return Game;
 }();
 
 exports.default = Game;
