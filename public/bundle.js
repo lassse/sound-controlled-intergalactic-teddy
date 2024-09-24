@@ -833,7 +833,9 @@ var Game = function () {
     _main2.default.classes = {};
     _main2.default.allowTraining = false;
 
-    window.addEventListener("click", this.clickStart.bind(this));
+    this.clickStart = this.clickStart.bind(this);
+
+    window.addEventListener("click", this.clickStart);
     // Q.soundClassifier = new SoundClassifier({
     // 	k: 5,
     // 	threshold: 30
@@ -867,7 +869,8 @@ var Game = function () {
   _createClass(Game, [{
     key: "clickStart",
     value: function clickStart(event) {
-      window.removeEventListener("click", this.clickStart.bind(this));
+      window.removeEventListener("click", this.clickStart);
+      console.log("clickStart");
       _main2.default.soundClassifier = new _AudioClassifier2.default({
         k: 5,
         threshold: 30
