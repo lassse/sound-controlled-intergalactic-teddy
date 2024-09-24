@@ -31,7 +31,9 @@ class Game {
     Q.classes = {};
     Q.allowTraining = false;
 
-    window.addEventListener("click", this.clickStart.bind(this));
+    this.clickStart = this.clickStart.bind(this);
+
+    window.addEventListener("click", this.clickStart);
     // Q.soundClassifier = new SoundClassifier({
     // 	k: 5,
     // 	threshold: 30
@@ -63,7 +65,8 @@ class Game {
   }
 
   clickStart(event) {
-    window.removeEventListener("click", this.clickStart.bind(this));
+    window.removeEventListener("click", this.clickStart);
+    console.log("clickStart");
     Q.soundClassifier = new SoundClassifier({
       k: 5,
       threshold: 30,
